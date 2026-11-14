@@ -11,8 +11,9 @@
   <meta property="og:type" content="website">
   <title>엄마랑, 마쓰야마 | 12월 3일–6일</title>
   <link rel="icon" href="assets/mikan.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=dca82ce5d039">
-  <script src="app.js?v=6eac6357d67b" defer></script>
+  <link rel="stylesheet" href="style.css?v=a6fc8d85fb2f">
+  <script src="widgets.js?v=18fa60436d3e" defer></script>
+  <script src="app.js?v=7507e74f96e4" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#itinerary">일정으로 바로 가기</a>
@@ -36,11 +37,28 @@
   </header>
 
   <main id="top">
+    <section class="travel-tools wrapper" aria-label="여행지 날씨와 환율 계산기">
+      <div class="tool-card weather-card">
+        <div class="tool-heading"><h2>여행지 날씨</h2><select id="weather-day" aria-label="날씨와 일정을 볼 날짜"><option value="1">12. 3. 목</option><option value="2">12. 4. 금</option><option value="3">12. 5. 토</option><option value="4">12. 6. 일</option></select></div>
+        <p id="weather-region" class="tool-region">도고온천 주변</p>
+        <div id="weather-content" class="weather-content" aria-live="polite">날씨를 불러오는 중이에요…</div>
+        <button id="weather-retry" class="widget-retry" hidden>날씨 다시 불러오기</button>
+        <a class="tool-source" href="https://open-meteo.com/" target="_blank" rel="noopener">날씨 제공 · Open-Meteo ↗</a>
+      </div>
+      <div class="tool-card currency-card">
+        <div class="tool-heading"><h2>엔화 → 원화 계산기</h2></div>
+        <label class="yen-label" for="yen-amount">일본에서 쓸 금액</label>
+        <div class="yen-field"><input id="yen-amount" type="text" inputmode="decimal" autocomplete="off" maxlength="18" placeholder="예: 1,000" aria-describedby="exchange-status exchange-note"><span aria-hidden="true">엔</span></div>
+        <output id="won-result" for="yen-amount" aria-live="polite">금액을 입력하면 원화가 보여요.</output>
+        <p id="exchange-status" class="exchange-status">최신 기준 환율을 불러오는 중이에요…</p>
+        <button id="exchange-retry" class="widget-retry" hidden>환율 다시 불러오기</button>
+        <p id="exchange-note" class="tool-source">참고 금액 · 환전·카드 수수료 제외<br>환율 제공 · <a href="https://frankfurter.dev/" target="_blank" rel="noopener">Frankfurter ↗</a></p>
+      </div>
+    </section>
     <section class="hero wrapper" aria-labelledby="hero-title">
       <div class="hero-copy">
         <p class="eyebrow">JAPAN · EHIME · MATSUYAMA</p>
         <h1 id="hero-title">엄마랑,<br><span>마쓰야마</span></h1>
-        <p class="hero-description">따뜻한 온천, 맛있는 한 끼.<br>우리 속도로 천천히 걷는 나흘.</p>
         <p class="trip-date"><svg class="icon"><use href="#calendar"/></svg>2026. 12. 3. 목 — 12. 6. 일 <b>3박 4일</b></p>
         <a class="button primary" href="#itinerary">여행 일정 보기 <svg class="icon"><use href="#arrow"/></svg></a>
       </div>
@@ -57,7 +75,7 @@
         <button id="tab-3" role="tab" aria-controls="day-panel" aria-selected="false" tabindex="-1" data-day="3"><span>셋째 날</span><strong>12. 5. <small>토</small></strong><em>항구·바다</em></button>
         <button id="tab-4" role="tab" aria-controls="day-panel" aria-selected="false" tabindex="-1" data-day="4"><span>마지막 날</span><strong>12. 6. <small>일</small></strong><em>쇼핑·귀국</em></button>
       </div>
-      <p id="memo-storage-info" class="memo-storage-info"><strong>일정 아래 ‘엄마의 의견!’을 눌러 메모를 남겨 보세요.</strong> 메모는 이 기기의 같은 브라우저에 자동 저장돼요. 다른 기기에는 공유되지 않으며, 브라우저 데이터를 지우면 사라져요.</p>
+      <p id="memo-storage-info" class="memo-storage-info">일정 아래 ‘엄마의 의견!’을 눌러 메모를 남겨 보세요.</p>
       <div id="day-panel" role="tabpanel" aria-labelledby="tab-1" tabindex="0"></div>
       <noscript><p>날짜별 일정을 보려면 브라우저에서 자바스크립트를 켜 주세요. 아래에서 식당과 숙소 정보도 확인할 수 있어요.</p></noscript>
       <p class="schedule-note">시간은 이동과 식사를 위한 예상 시각이에요. 항공편·예약·날씨에 따라 조정해요.</p>
