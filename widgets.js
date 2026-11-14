@@ -11,13 +11,17 @@ const weatherRequests = new Map();
 let weatherRequestId = 0;
 let activeWeatherDay = 1;
 let exchangeRate = null;
+let exchangeInFlight = null;
+let exchangeRefreshTimer;
+const exchangeRefreshSlots = [3,4,5,6].map(day => Date.parse(`2026-12-0${day}T06:00:00+09:00`));
+const exchangeTripEnd = Date.parse('2026-12-07T00:00:00+09:00');
 const wonFormat = new Intl.NumberFormat('ko-KR', {maximumFractionDigits:0});
 
-async function fetchWidgetData(url) {
+async function fetchWidgetData(url, options = {}) {
  const controller = new AbortController();
  const timer = setTimeout(() => controller.abort(), 12000);
  try {
-  const response = await fetch(url, {signal:controller.signal, credentials:'omit'});
+  const response = await fetch(url, {...options, signal:controller.signal, credentials:'omit'});
   if (!response.ok) throw new Error('Data unavailable');
   return await response.json();
  } finally { clearTimeout(timer); }
@@ -118,29 +122,76 @@ function paintExchangeRate(saved = false) {
  const status = document.getElementById('exchange-status');
  const formatted = exchangeRate.rate.toLocaleString('ko-KR',{maximumFractionDigits:4});
  status.textContent = `${saved ? '저장된 환율 · ' : ''}1엔 ≈ ${formatted}원 · ${exchangeRate.date.replaceAll('-','.')} 기준`;
+ if (Number.isFinite(Date.parse(exchangeRate.checkedAt))) {
+  const checked = new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(exchangeRate.checkedAt));
+  status.textContent += ` · ${checked} 확인`;
+ }
  updateConversion();
 }
 
-async function loadExchangeRate() {
+function currentExchangeSlot(now = Date.now()) {
+ if (now >= exchangeTripEnd) return null;
+ const slot = exchangeRefreshSlots.filter(time => time <= now).at(-1);
+ return slot === undefined ? null : new Date(slot).toISOString();
+}
+
+async function readExchangeRate(slot) {
+ // The scheduled job publishes one shared snapshot, even when the site is closed.
+ if (slot) {
+  try {
+   const snapshot = await fetchWidgetData('data/exchange-rate.json?slot=' + encodeURIComponent(slot), {cache:'no-store'});
+   if (validExchangeRate(snapshot) && snapshot.refreshSlot === slot && Number.isFinite(Date.parse(snapshot.checkedAt))) return snapshot;
+  } catch {}
+ }
+ // A fresh API lookup also covers deployment delay or an unavailable snapshot.
+ const data = await fetchWidgetData('https://api.frankfurter.dev/v2/rate/JPY/KRW', {cache:'no-store'});
+ if (!validExchangeRate(data)) throw new Error('Invalid exchange rate');
+ return {base:data.base,quote:data.quote,rate:data.rate,date:data.date,checkedAt:new Date().toISOString(),refreshSlot:slot};
+}
+
+async function loadExchangeRate(force = false) {
+ if (exchangeInFlight) return exchangeInFlight;
+ const slot = currentExchangeSlot();
+ if (!force && slot && exchangeRate?.refreshSlot === slot) return;
  const retry = document.getElementById('exchange-retry');
  const status = document.getElementById('exchange-status');
  retry.hidden = true;
  if (!exchangeRate) status.textContent = '최신 기준 환율을 불러오는 중이에요…';
- try {
-  const data = await fetchWidgetData('https://api.frankfurter.dev/v2/rate/JPY/KRW');
-  if (!validExchangeRate(data)) throw new Error('Invalid exchange rate');
-  exchangeRate = {base:data.base,quote:data.quote,rate:data.rate,date:data.date};
+ exchangeInFlight = (async () => { try {
+  exchangeRate = await readExchangeRate(slot);
   try { localStorage.setItem('matsuyama-jpy-krw-v1', JSON.stringify(exchangeRate)); } catch {}
   paintExchangeRate();
  } catch {
   if (exchangeRate) paintExchangeRate(true);
   else status.textContent = '환율을 불러오지 못했어요. 다시 눌러 주세요.';
   retry.hidden = false;
- }
+ } finally {
+  exchangeInFlight = null;
+  // A lookup begun just before 06:00 must not consume the new day's refresh.
+  if (currentExchangeSlot() && currentExchangeSlot() !== slot) queueMicrotask(() => loadExchangeRate());
+ } })();
+ return exchangeInFlight;
+}
+
+function scheduleExchangeRefresh(now = Date.now()) {
+ clearTimeout(exchangeRefreshTimer);
+ const next = exchangeRefreshSlots.find(time => time > now);
+ if (next === undefined) return;
+ exchangeRefreshTimer = setTimeout(() => {
+  loadExchangeRate();
+  scheduleExchangeRefresh();
+ }, Math.min(next - now + 100, 2147483647));
+}
+
+function resumeExchangeRefresh() {
+ if (document.visibilityState === 'hidden') return;
+ const slot = currentExchangeSlot();
+ if (slot && exchangeRate?.refreshSlot !== slot) loadExchangeRate();
+ scheduleExchangeRefresh();
 }
 
 document.getElementById('yen-amount').addEventListener('input', updateConversion);
-document.getElementById('exchange-retry').addEventListener('click', loadExchangeRate);
+document.getElementById('exchange-retry').addEventListener('click', () => loadExchangeRate(true));
 document.getElementById('weather-retry').addEventListener('click', () => showDayWeather({id:activeWeatherDay}, true));
 document.getElementById('weather-day').addEventListener('change', event => renderDay(Number(event.target.value)));
 try {
@@ -148,3 +199,7 @@ try {
  if (validExchangeRate(savedRate)) { exchangeRate = savedRate; paintExchangeRate(true); }
 } catch {}
 loadExchangeRate();
+scheduleExchangeRefresh();
+document.addEventListener('visibilitychange', resumeExchangeRefresh);
+window.addEventListener('pageshow', resumeExchangeRefresh);
+window.addEventListener('online', resumeExchangeRefresh);

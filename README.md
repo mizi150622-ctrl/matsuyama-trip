@@ -22,3 +22,10 @@ GitHub Pages: https://mizi150622-ctrl.github.io/matsuyama-trip/
 
 일정은 추천안이며 항공편·예약에 따라 변경됩니다.
 사진 출처는 assets/sources.json과 사이트 하단에서 확인할 수 있습니다. 사진 저작권은 각 원권리자에게 있습니다.
+
+## 여행 중 환율 갱신
+
+- 2026년 12월 3~6일 매일 06:00(Asia/Seoul·Asia/Tokyo, UTC+9)에 예약 자동화가 Frankfurter의 최신 JPY/KRW를 조회해 `data/exchange-rate.json`을 갱신하고 main 및 gh-pages에 게시합니다. 총 4회이며 여행 후 종료합니다.
+- JSON 필드: `base`, `quote`, `rate`, `date`(제공처 기준일), `checkedAt`(실제 확인 UTC 시각), `refreshSlot`(해당 여행일 오전 6시를 나타내는 ISO UTC 시각). 기준일을 임의로 오늘로 바꾸지 않습니다.
+- 열린 화면은 해당 시각에 갱신하며, 잠자기·백그라운드에서 복귀하거나 연결이 복구되면 누락된 갱신을 확인합니다. 서버 게시가 늦으면 API를 직접 조회합니다. 새 환율을 얻지 못하면 이전 금액과 기준일을 유지하고 재시도를 안내합니다.
+- 여행 전·후에는 기존처럼 페이지를 열 때 최신 환율을 조회합니다. 메모 저장 키 및 개인 메모는 변경하지 않습니다.
