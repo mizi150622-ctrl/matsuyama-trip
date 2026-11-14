@@ -12,6 +12,7 @@ GitHub Pages: https://mizi150622-ctrl.github.io/matsuyama-trip/
 
 - 공개 사이트는 `gh-pages` 브랜치의 루트(`/`)에서 게시됩니다.
 - 별도 패키지 설치나 빌드 없이 HTML, CSS, JavaScript를 그대로 제공합니다.
+- JS/CSS 수정 후 `python scripts/version-assets.py`를 실행해 파일 내용에 맞는 버전 URL을 갱신합니다. 브라우저가 이전 스크립트나 스타일을 재사용하는 것을 막으며 메모 저장 키에는 영향을 주지 않습니다.
 - 사이트 수정 시 `main`에서 검증한 뒤, `gh-pages`도 같은 커밋으로 fast-forward하여 게시합니다.
 - 배포 상태는 GitHub 저장소의 Actions → `pages build and deployment`에서 확인합니다.
 
