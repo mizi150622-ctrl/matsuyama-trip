@@ -4,12 +4,18 @@ const mapUrl = place => 'https://www.google.com/maps/search/?api=1&query=' + enc
 const routePlace = stop => stop.routePlace || stop.info[4];
 const directionsUrl = (from, to) => 'https://www.google.com/maps/dir/?api=1&origin=' + encodeURIComponent(routePlace(from)) + '&destination=' + encodeURIComponent(routePlace(to)) + (to.travelMode === 'driving' ? '&travelmode=driving' : '');
 function routeLink(from, to) {
- if (!to) return '';
+ if (!to || from.noRouteToNext) return '';
  const label = `${from.info[2]}에서 ${to.info[2]}까지 길찾기, 구글지도 새 창`;
  return `<a class="timeline-route" href="${directionsUrl(from, to)}" target="_blank" rel="noopener" aria-label="${label}" title="${label}"><span class="route-arrow" aria-hidden="true">↓</span></a>`;
 }
+function busBooking(stop) {
+ if (!stop.bus) return '';
+ return `<div class="bus-booking" aria-label="공항버스 예매 정보"><span class="bus-status">발권 완료</span><strong class="bus-seat">좌석 ${stop.bus.seat}번</strong><span class="bus-type">일반 · 시외우등버스</span></div>`;
+}
 const days = [
- {id:1,date:'12월 3일 목요일',title:'오후에 도착해, 온천에서 쉬어요',description:'14:40 마쓰야마 도착 후 입국 수속을 마치고 도고칸으로 이동해요. 점심은 인천공항에서 출발 전에 먹어요.',flight:'제주항공 7C1703 · 인천 T1 13:05 → 마쓰야마 14:40',image:'assets/dogo-honkan.webp',alt:'도고온천 본관의 전통 목조 건물',route:['14:40 공항 도착','도고칸·온천','료칸 저녁','선택: 밤 산책'],stay:'도고칸 · 첫 번째 밤',stayNote:'저녁·조식 포함 여부 확인',tipTitle:'첫날은 숙소에서 여유 있게',tip:'입국과 수하물 수령에 45~60분을 예상해요. 공항에서 도고까지 차로 약 40분이므로 체크인은 16:15 전후로 잡아요. 지연되면 산책을 생략하고 숙소에서 쉬어요.',stops:[
+ {id:1,date:'12월 3일 목요일',title:'오후에 도착해, 온천에서 쉬어요',description:'09:05 정자역에서 예약한 공항버스를 타요. 인천공항에서 점심을 먹고, 13:05 비행기로 출발해 14:40 마쓰야마에 도착해요.',flight:'제주항공 7C1703 · 인천 T1 13:05 → 마쓰야마 14:40',image:'assets/dogo-honkan.webp',alt:'도고온천 본관의 전통 목조 건물',route:['09:05 정자역 버스','13:05 인천 출발','14:40 마쓰야마 도착','도고칸·온천'],stay:'도고칸 · 첫 번째 밤',stayNote:'저녁·조식 포함 여부 확인',tipTitle:'첫날은 숙소에서 여유 있게',tip:'입국과 수하물 수령에 45~60분을 예상해요. 공항에서 도고까지 차로 약 40분이므로 체크인은 16:15 전후로 잡아요. 지연되면 산책을 생략하고 숙소에서 쉬어요.',stops:[
+  {id:'d1-airport-bus',fixedTime:true,timeLabel:'예약',bus:{seat:'07'},info:['09:05','공항버스 출발','정자역 → 인천공항','09:05 출발 공항버스를 타요. 출발 전에 정자역 승차장에 도착해 모바일 승차권을 준비해요.','정자역 성남시','승차권과 정확한 승차 위치는 예매 앱의 상세보기에서 확인해요.']},
+  {id:'d1-flight',fixedTime:true,noRouteToNext:true,info:['13:05','출국 항공편','인천공항 T1 · 제주항공 7C1703 출발','공항에서 체크인과 출국 수속을 마친 뒤, 탑승 전에 점심을 먹어요. 14:40 마쓰야마 도착 예정이에요.','인천국제공항 제1여객터미널','탑승 시작·마감 시간은 항공권과 당일 안내를 확인해요.']},
   {id:'d1-arrival',fixedTime:true,info:['14:40','일본 도착','마쓰야마공항 도착·입국','제주항공 7C1703으로 도착해 입국 수속과 수하물 수령을 해요. 15:30~15:45 전후 공항 출발을 예상해요.','松山空港','입국 대기에 따라 달라져요. 공항에서 도고까지 차로 약 40분이에요.']},
   {id:'d1-dogokan-checkin',info:['16:15','휴식','도고칸 체크인·온천','숙소로 이동해 짐을 풀고, 따뜻한 온천과 방에서 여유 있게 쉬어요.','道後舘 松山市道後多幸町7-26','공항에서 택시로 바로 이동하는 기준의 예상 시각이에요.']},
   {id:'d1-dogokan-dinner',info:['18:00','저녁','도고칸 가이세키','석식 포함 상품이면 료칸에서 저녁을 먹어요. 정확한 식사 시간은 체크인할 때 맞춰요.','道後舘 松山市道後多幸町7-26','석식 미포함이면 스시마루 도고점 등 주변 식당으로 바꿔요.','meal']},
@@ -35,11 +41,13 @@ const days = [
   {id:'d3-sushimaru',info:['18:00','저녁','스시마루 본점','니기리즈시나 마쓰야마즈시로 마지막 저녁을 즐겨요.','すし丸 本店 松山市二番町2-3-2','토요일 저녁 예약 추천 · 예약 전','meal']},
   {id:'d3-packing',info:['20:00','귀국 준비','짐 정리·내일 아침 택시 부탁하기','프런트에 내일 07:00 공항행 택시 배차를 부탁하고, 아침에는 바로 나갈 수 있게 짐을 정리해요.','カンデオホテルズ松山大街道','택시는 아직 예약 전이에요. 조식 이용과 이른 체크아웃도 함께 확인해요.']}
  ]},
- {id:4,date:'12월 6일 일요일',title:'아침 먹고, 택시로 공항에 가요',description:'호텔에서 조식을 먹고 체크아웃한 뒤 공항으로 바로 이동해요. 09:35 비행기라 07:30 공항 도착을 목표로 해요.',flight:'제주항공 7C1722 · 마쓰야마 09:35 → 인천 T1 11:20',image:null,route:['06:30 호텔 조식','07:00 택시 출발','07:30 공항 도착','09:35 비행기'],stay:'오늘은 집으로 돌아가는 날',stayNote:'07:00 택시 출발 · 전날 배차 요청',tipTitle:'조식 후 공항으로 바로',tip:'칸데오 조식은 06:30부터예요. 짐은 전날 정리하고, 06:55까지 식사를 마쳐 07:00 택시를 타요. 호텔에서 공항까지 약 30분을 예상해요.',stops:[
+ {id:4,date:'12월 6일 일요일',title:'아침 먹고 공항으로, 버스 타고 집으로',description:'조식 후 07:00에 택시를 타고 마쓰야마공항으로 가요. 11:20 인천 도착 후 입국 수속을 마치고, 13:35 정자역행 버스를 타요.',flight:'제주항공 7C1722 · 마쓰야마 09:35 → 인천 T1 11:20',image:null,route:['07:00 택시 출발','09:35 마쓰야마 출발','11:20 인천 도착','13:35 정자역행 버스'],stay:'오늘은 집으로 돌아가는 날',stayNote:'07:00 택시 출발 · 전날 배차 요청',tipTitle:'조식 후 공항으로 바로',tip:'칸데오 조식은 06:30부터예요. 짐은 전날 정리하고, 06:55까지 식사를 마쳐 07:00 택시를 타요. 호텔에서 공항까지 약 30분을 예상해요.',stops:[
   {id:'d4-breakfast',routePlace:'カンデオホテルズ松山大街道',info:['06:30','아침','칸데오 호텔 조식','조식이 시작할 때 내려가 아침을 먹어요. 06:55까지 식사를 마치고 바로 출발 준비를 해요.','','호텔 공식 조식 시간 06:30~09:30 · 조식 이용은 전날 확인해요.','meal']},
   {id:'d4-checkout',info:['07:00','택시 출발','체크아웃 후 택시 타기','06:55 전후 체크아웃을 마치고, 짐을 모두 챙겨 공항행 택시에 타요.','カンデオホテルズ松山大街道','전날 프런트에 07:00 배차를 부탁해요. 공항까지 약 30분을 예상해요.']},
   {id:'d4-airport',travelMode:'driving',info:['07:30','도착 목표','마쓰야마공항 국제선 수속','09:35 출발까지 약 2시간 여유를 두고 도착해요. 제주항공 체크인·수하물 위탁 후 보안검색과 출국 심사를 해요.','松山空港','교통 상황에 따라 도착 시각이 달라질 수 있어요. 탑승구는 당일 전광판에서 확인해요.']},
-  {id:'d4-flight',fixedTime:true,info:['09:35','귀국 항공편','제주항공 7C1722 출발','마쓰야마에서 출발해 11:20 인천공항 제1터미널에 도착하는 일정이에요.','松山空港','탑승 시작·마감 시간은 항공권과 당일 안내를 확인해요.']}
+  {id:'d4-flight',fixedTime:true,noRouteToNext:true,info:['09:35','귀국 항공편','제주항공 7C1722 출발','마쓰야마에서 출발해 11:20 인천공항 제1터미널에 도착하는 일정이에요.','松山空港','탑승 시작·마감 시간은 항공권과 당일 안내를 확인해요.']},
+  {id:'d4-incheon-arrival',fixedTime:true,info:['11:20','한국 도착','인천공항 T1 도착·입국','입국 수속과 수하물 수령을 마친 뒤 쉬어요. 13:35 출발 버스의 승차 위치를 예매 앱에서 확인해요.','인천국제공항 제1여객터미널','항공편 도착 예정 시각이에요. 버스 출발 전 모바일 승차권을 준비해요.']},
+  {id:'d4-airport-bus',fixedTime:true,timeLabel:'예약',bus:{seat:'04'},info:['13:35','귀가 버스 출발','인천공항 → 정자역','13:35 출발 정자역행 공항버스를 타고 돌아가요. 출발 전에 예매 앱에서 승차권을 열어 준비해요.','정자역 성남시','승차 터미널·승차장 번호는 예매 앱의 상세보기에서 확인해요. 지도는 도착지인 정자역을 보여줘요.']}
  ]}
 ];
 const foods = [
@@ -104,7 +112,7 @@ function renderDay(id, save = true) {
  const panel = document.getElementById('day-panel'); panel.setAttribute('aria-labelledby', 'tab-' + day.id);
  panel.innerHTML = `<div class="day-intro ${day.image ? '' : 'no-image'}"><div class="day-intro-copy"><p class="day-count">DAY 0${day.id} · ${day.date}</p><h3>${day.title}</h3><p class="description">${day.description}</p>${day.flight?`<p class="flight-note">✈ ${day.flight}</p>`:''}<div class="route-line" aria-label="이동 순서">${day.route.map((r,i)=>`${i?'<i aria-hidden="true">→</i>':''}<span>${r}</span>`).join('')}</div></div>${day.image?`<img src="${day.image}" alt="${day.alt}" width="520" height="360">`:''}</div>
  <p class="timeline-help"><span aria-hidden="true">↓</span> 시간 사이의 선이나 화살표를 누르면<br class="mobile-break"> 다음 장소까지 구글맵 길찾기가 열려요.</p>
- <div class="day-layout"><ol class="timeline">${day.stops.map(({id:stopId,info:s},index)=>`<li class="stop ${s[6]||''}">${routeLink(day.stops[index], day.stops[index+1])}<div class="stop-time">${s[0]}<small>${day.stops[index].fixedTime?'항공편':'예상'}</small></div><div><span class="stop-category">${s[1]}</span><h4>${s[2]}</h4><p>${s[3]}</p>${s[5]?`<p class="small-note">${s[5]}</p>`:''}${s[4]?`<a class="map-button" href="${mapUrl(s[4])}" target="_blank" rel="noopener" aria-label="${s[2]} 구글지도 보기, 새 창">${icon('pin')}지도 보기</a>`:''}<details class="stop-memo"><summary class="memo-toggle"><span class="memo-arrow" aria-hidden="true">▶</span>엄마의 의견!</summary><div class="memo-content"><label class="visually-hidden" for="memo-${stopId}">${day.date} ${s[0]} ${s[2]} 엄마의 의견</label><textarea id="memo-${stopId}" data-note-id="${stopId}" rows="3" placeholder="먹고 싶은 메뉴나 기억할 일을 적어 주세요." aria-describedby="memo-storage-info memo-status-${stopId}"></textarea><p id="memo-status-${stopId}" class="memo-status" role="status" aria-live="polite"></p></div></details></div></li>`).join('')}</ol></div>`;
+ <div class="day-layout"><ol class="timeline">${day.stops.map(({id:stopId,info:s},index)=>`<li class="stop ${s[6]||''}">${routeLink(day.stops[index], day.stops[index+1])}<div class="stop-time">${s[0]}<small>${day.stops[index].timeLabel || (day.stops[index].fixedTime?'항공편':'예상')}</small></div><div><span class="stop-category">${s[1]}</span><h4>${s[2]}</h4>${busBooking(day.stops[index])}<p>${s[3]}</p>${s[5]?`<p class="small-note">${s[5]}</p>`:''}${s[4]?`<a class="map-button" href="${mapUrl(s[4])}" target="_blank" rel="noopener" aria-label="${s[2]} 구글지도 보기, 새 창">${icon('pin')}지도 보기</a>`:''}<details class="stop-memo"><summary class="memo-toggle"><span class="memo-arrow" aria-hidden="true">▶</span>엄마의 의견!</summary><div class="memo-content"><label class="visually-hidden" for="memo-${stopId}">${day.date} ${s[0]} ${s[2]} 엄마의 의견</label><textarea id="memo-${stopId}" data-note-id="${stopId}" rows="3" placeholder="먹고 싶은 메뉴나 기억할 일을 적어 주세요." aria-describedby="memo-storage-info memo-status-${stopId}"></textarea><p id="memo-status-${stopId}" class="memo-status" role="status" aria-live="polite"></p></div></details></div></li>`).join('')}</ol></div>`;
  connectNotes(panel);
  showDayWeather(day);
  if(save) { try { localStorage.setItem('matsuyama-day', String(day.id)); } catch {} }

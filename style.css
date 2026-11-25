@@ -33,3 +33,8 @@
 @media print{.travel-tools{display:none}}
 
 .flight-note{margin-top:14px;padding:10px 12px;border-radius:6px;background:#ffffffb5;font-size:.85em;font-weight:600;line-height:1.8;color:var(--green)}
+
+/* Compact, readable ticket details within the departure timeline. */
+.bus-booking{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin:12px 0 14px;padding:14px 16px;border:1px solid #a8bda8;border-radius:8px;background:#e9f0e4;color:var(--green)}
+.bus-status{font-size:.78em;font-weight:600;background:#fffefa;border-radius:4px;padding:3px 7px}.bus-seat{font-size:1.35em;line-height:1.4;white-space:nowrap}.bus-type{flex-basis:100%;font-size:.82em;line-height:1.6}
+@media(max-width:760px){.bus-booking{padding:12px;gap:7px 10px}.bus-seat{font-size:1.25em}}
